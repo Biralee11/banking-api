@@ -3,7 +3,6 @@ from savings_account import SavingsAccount
 from current_account import CurrentAccount
 from random import randint
 from models import CreateSavingsAccountRequest, CreateCurrentAccountRequest, DepositRequest, WithdrawRequest, TransferRequest, UpdateAccountRequest
-from strategies import SimpleInterestStrategy, CompoundInterestStrategy
 from exceptions import InvalidAmountError, InsufficientFundsError
 
 app = FastAPI()
@@ -20,11 +19,7 @@ def create_savings_account(request: CreateSavingsAccountRequest):
         account_number = str(randint(0, 99999999)).zfill(8)
         if account_number not in [account.account_number for account in accounts]:
             break
-    if request.interest_strategy == "SimpleInterestStrategy":
-        interest_strategy = SimpleInterestStrategy()
-    elif request.interest_strategy == "CompoundInterestStrategy":
-        interest_strategy = CompoundInterestStrategy()
-    account = SavingsAccount(request.account_holder, account_number, request.balance, request.email, request.phone_number, request.interest_rate, interest_strategy)
+    account = SavingsAccount(request.account_holder, account_number, request.balance, request.email, request.phone_number, request.interest_rate, request.interest_strategy)
     accounts.append(account)
     return account.to_dict()
 
@@ -116,28 +111,3 @@ def close_account(account_number: str):
            accounts.remove(account)
            return {"message": "Account closed successfully"}
     raise HTTPException(status_code=404, detail="Account not found")
-
-
-
-#uvicorn main:app --reload
-"""
-{
-  "account_holder": "Kcee Michael",
-  "balance": 1400,
-  "email": "kcee.michael@gmail.com",
-  "phone_number": "07345789092",
-  "interest_rate": 0.05,
-  "interest_strategy": "SimpleInterestStrategy"
-}
-"""
-
-"""
-{
-  "account_holder": "Fred Collins",
-  "balance": 1500,
-  "email": "fred.collins@gmail.com",
-  "phone_number": "07325454582",
-  "interest_rate": 0.05,
-  "interest_strategy": "SimpleInterestStrategy"
-}
-"""
