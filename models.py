@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from typing import Optional, Any
+from typing import Optional
 import re
 from strategies import SimpleInterestStrategy, CompoundInterestStrategy
 
@@ -35,7 +35,7 @@ class BaseAccountRequest(BaseModel):
 class CreateSavingsAccountRequest(BaseAccountRequest):
     balance: float
     interest_rate: float
-    interest_strategy: Any
+    interest_strategy: str
 
     @field_validator("interest_rate")
     @classmethod
