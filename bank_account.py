@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from typing import Optional
 from descriptors import BalanceDescriptor
-from mixins import LogMixin
+from exceptions import InvalidAmountError, InsufficientFundsError
 
 
 # Metaclass that enforces all account classes must define a 'currency' class attribute.
@@ -13,7 +12,7 @@ class AccountMeta(ABCMeta):
             raise AttributeError('missing attribute "currency"')      
         return super().__new__(cls, name, bases, dct)
 
-class BankAccount(LogMixin, metaclass=AccountMeta):
+class BankAccount(metaclass=AccountMeta):
     currency = "GBP"
     balance = BalanceDescriptor()
     def __init__(self, account_holder, account_number, balance, email, phone_number):
@@ -22,17 +21,6 @@ class BankAccount(LogMixin, metaclass=AccountMeta):
         self._balance = balance
         self.email = email
         self.phone_number = phone_number
-        self.observers = []
-
-    def add_observer(self, observer):
-        self.observers.append(observer)
-
-    def remove_observer(self, observer):
-        self.observers.remove(observer)
-
-    def notify_observers(self, message):
-        for observer in self.observers:
-            observer.update(message)
     
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -50,20 +38,18 @@ class BankAccount(LogMixin, metaclass=AccountMeta):
     def from_dict(cls, dict_account):
         pass
 
-    def deposit(self, amount: float) -> Optional[bool]:
+    def deposit(self, amount: float) -> bool:
         if amount <= 0:
-            return False
+            raise InvalidAmountError()
         else:
             self.balance = self.balance + amount
-            self.notify_observers(f"Deposit of £{amount} made, balance is now £{self.balance}")
             return True
     
-    def withdraw(self, amount: float) -> Optional[bool]:
+    def withdraw(self, amount: float) -> bool:
         if amount > self.balance:
-            return False
+            raise InsufficientFundsError()
         elif amount <= 0:
-            return False
+            raise InvalidAmountError()
         else:
             self.balance = self.balance - amount
-            self.notify_observers(f"Withdrawal of £{amount} made, balance is now £{self.balance}")
             return True

@@ -4,6 +4,7 @@ from current_account import CurrentAccount
 from random import randint
 from models import CreateSavingsAccountRequest, CreateCurrentAccountRequest, DepositRequest, WithdrawRequest, TransferRequest, UpdateAccountRequest
 from strategies import SimpleInterestStrategy, CompoundInterestStrategy
+from exceptions import InvalidAmountError, InsufficientFundsError
 
 app = FastAPI()
 
@@ -52,8 +53,9 @@ def get_account(account_number: str):
 def deposit(request: DepositRequest, account_number: str):
     for account in accounts:
         if account_number == account.account_number:
-            result = account.deposit(request.deposit_amount)
-            if result == False:
+            try:
+                account.deposit(request.deposit_amount)
+            except InvalidAmountError:
                 raise HTTPException(status_code=400, detail="Deposit amount must be greater than zero")
             return account.to_dict()
     raise HTTPException(status_code=404, detail="Account not found")
@@ -62,9 +64,12 @@ def deposit(request: DepositRequest, account_number: str):
 def withdraw(request: WithdrawRequest, account_number: str):
     for account in accounts:
         if account_number == account.account_number:
-            result = account.withdraw(request.withdraw_amount)
-            if result == False:
-                raise HTTPException(status_code=400, detail="Withdraw amount must be greater than zero and less than or equal to balance")
+            try:
+                account.withdraw(request.withdraw_amount)
+            except InvalidAmountError:
+                raise HTTPException(status_code=400, detail="Withdraw amount must be greater than zero")
+            except InsufficientFundsError:
+                raise HTTPException(status_code=400, detail="Withdraw amount must be less than or equal to balance")
             return account.to_dict()
     raise HTTPException(status_code=404, detail="Account not found")
 
@@ -80,15 +85,14 @@ def transfer(request: TransferRequest):
             receiver_account_found = True
             receiver_account = account
     if sender_account_found == True and receiver_account_found == True:
-        withdraw_result = sender_account.withdraw(request.transfer_amount)
-        if withdraw_result:
-            deposit_result = receiver_account.deposit(request.transfer_amount)
-            if deposit_result:
-                return sender_account.to_dict()
-            else:
-                raise HTTPException(status_code=400, detail="Deposit amount must be greater than zero")
-        else:
-            raise HTTPException(status_code=400, detail="Withdraw amount must be greater than zero and less than or equal to balance")
+        try:
+           sender_account.withdraw(request.transfer_amount)
+        except InvalidAmountError:
+            raise HTTPException(status_code=400, detail="Withdraw amount must be greater than zero")
+        except InsufficientFundsError:
+            raise HTTPException(status_code=400, detail="Withdraw amount must be less than or equal to balance")
+        receiver_account.deposit(request.transfer_amount)
+        return sender_account.to_dict()
     else:
         raise HTTPException(status_code=404, detail="Account not found")
 

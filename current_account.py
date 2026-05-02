@@ -1,5 +1,6 @@
 from bank_account import BankAccount
 from descriptors import CurrentAccountBalanceDescriptor
+from exceptions import InvalidAmountError, InsufficientFundsError
 
 class CurrentAccount(BankAccount):
     account_type = "current"
@@ -26,10 +27,9 @@ class CurrentAccount(BankAccount):
     
     def withdraw(self, amount):
         if amount > (self.balance + self.overdraft_limit):
-            return False
+            raise InsufficientFundsError()
         elif amount <= 0:
-            return False
+            raise InvalidAmountError()
         else:
             self.balance = self.balance -  amount
-            self.notify_observers(f"Withdrawal of £{amount} made, balance is now £{self.balance}")
             return True
