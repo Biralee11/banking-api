@@ -10,6 +10,7 @@ This project is the API layer built on top of the [Banking CLI App](https://gith
 - FastAPI
 - Uvicorn
 - Pydantic
+- Docker
 
 ## Getting Started
 
@@ -43,6 +44,22 @@ The API will be running at `http://127.0.0.1:8000`
 
 Interactive API documentation is available at `http://127.0.0.1:8000/docs`
 
+## Docker
+
+Build the image.
+
+```bash
+docker build -t banking-api .
+```
+
+Run the container.
+
+```bash
+docker run -p 8000:8000 banking-api
+```
+
+The API will be available at `http://127.0.0.1:8000`
+
 ## Endpoints
 
 | Method | Endpoint | Description |
@@ -65,5 +82,5 @@ Account data is currently held in memory. Data does not persist between server r
 ## Roadmap
 
 - PostgreSQL database integration
-- Docker containerisation and deployment
+- Docker containerisation and deployment ✅
 - Authentication and authorisation
