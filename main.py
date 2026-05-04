@@ -1,113 +1,175 @@
-from fastapi import FastAPI, HTTPException
-from savings_account import SavingsAccount
-from current_account import CurrentAccount
+from fastapi import FastAPI, HTTPException, Depends
 from random import randint
 from models import CreateSavingsAccountRequest, CreateCurrentAccountRequest, DepositRequest, WithdrawRequest, TransferRequest, UpdateAccountRequest
 from exceptions import InvalidAmountError, InsufficientFundsError
+from database import SessionLocal
+from db_models import SavingsAccountModel, CurrentAccountModel
 
 app = FastAPI()
 
-accounts = []
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.get("/")
 def root():
     return{"message": "Banking API is running"}
 
 @app.post("/accounts/savings")
-def create_savings_account(request: CreateSavingsAccountRequest): 
+def create_savings_account(request: CreateSavingsAccountRequest, db = Depends(get_db)): 
     while True:
         account_number = str(randint(0, 99999999)).zfill(8)
-        if account_number not in [account.account_number for account in accounts]:
+        if not db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == account_number).first() and not db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == account_number).first():
             break
-    account = SavingsAccount(request.account_holder, account_number, request.balance, request.email, request.phone_number, request.interest_rate, request.interest_strategy)
-    accounts.append(account)
-    return account.to_dict()
+    account_model = SavingsAccountModel(account_holder=request.account_holder, account_number=account_number, balance=request.balance, email=request.email, phone_number=request.phone_number, interest_rate=request.interest_rate, interest_strategy=type(request.interest_strategy).__name__)
+    db.add(account_model)
+    db.commit()
+    db.refresh(account_model)
+    return account_model.to_entity().to_dict()
 
 @app.post("/accounts/current")
-def create_current_account(request: CreateCurrentAccountRequest):  
+def create_current_account(request: CreateCurrentAccountRequest, db = Depends(get_db)):  
     while True:
         account_number = str(randint(0, 99999999)).zfill(8)
-        if account_number not in [account.account_number for account in accounts]:
+        if not db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == account_number).first() and not db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == account_number).first():
             break
-    account = CurrentAccount(request.account_holder, account_number, request.balance, request.email, request.phone_number, request.overdraft_limit)
-    accounts.append(account)
-    return account.to_dict()
+    account = CurrentAccountModel(account_holder=request.account_holder, account_number=account_number, balance=request.balance, email=request.email, phone_number=request.phone_number, overdraft_limit=request.overdraft_limit)
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+    return account.to_entity().to_dict()
 
 @app.get("/accounts")
-def get_all_accounts():
-    return [account.to_dict() for account in accounts]
+def get_all_accounts(db = Depends(get_db)):
+    accounts = db.query(SavingsAccountModel).all() + db.query(CurrentAccountModel).all()
+    return [account.to_entity().to_dict() for account in accounts]
 
 @app.get("/accounts/{account_number}")
-def get_account(account_number: str):
-    for account in accounts:
-        if account_number == account.account_number:
-            return account.to_dict()
-    raise HTTPException(status_code=404, detail="Account not found")
+def get_account(account_number: str, db = Depends(get_db)):
+        savings_account = db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == account_number).first()
+        current_account = db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == account_number).first()
+        if savings_account is not None:
+            return savings_account.to_entity().to_dict() 
+        elif current_account is not None:
+            return current_account.to_entity().to_dict()
+        else:
+            raise HTTPException(status_code=404, detail="Account not found")
 
 @app.post("/accounts/{account_number}/deposit")
-def deposit(request: DepositRequest, account_number: str):
-    for account in accounts:
-        if account_number == account.account_number:
-            try:
-                account.deposit(request.deposit_amount)
-            except InvalidAmountError:
-                raise HTTPException(status_code=400, detail="Deposit amount must be greater than zero")
-            return account.to_dict()
-    raise HTTPException(status_code=404, detail="Account not found")
+def deposit(request: DepositRequest, account_number: str, db = Depends(get_db)):
+    savings_account_model = db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == account_number).first()
+    current_account_model = db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == account_number).first()
+    if savings_account_model is not None:
+        account_object = savings_account_model.to_entity()
+        account_model = savings_account_model
+    elif current_account_model is not None:
+        account_object = current_account_model.to_entity()
+        account_model = current_account_model
+    else:
+        raise HTTPException(status_code=404, detail="Account not found")
+    try:
+        account_object.deposit(request.deposit_amount)
+        account_model.balance = account_object.balance
+    except InvalidAmountError:
+        raise HTTPException(status_code=400, detail="Deposit amount must be greater than zero")
+    db.commit()
+    return account_object.to_dict()
 
 @app.post("/accounts/{account_number}/withdraw")
-def withdraw(request: WithdrawRequest, account_number: str):
-    for account in accounts:
-        if account_number == account.account_number:
-            try:
-                account.withdraw(request.withdraw_amount)
-            except InvalidAmountError:
-                raise HTTPException(status_code=400, detail="Withdraw amount must be greater than zero")
-            except InsufficientFundsError:
-                raise HTTPException(status_code=400, detail="Withdraw amount must be less than or equal to balance")
-            return account.to_dict()
-    raise HTTPException(status_code=404, detail="Account not found")
+def withdraw(request: WithdrawRequest, account_number: str, db = Depends(get_db)):
+    savings_account_model = db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == account_number).first()
+    current_account_model = db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == account_number).first()
+    if savings_account_model is not None:
+        account_object = savings_account_model.to_entity()
+        account_model = savings_account_model
+    elif current_account_model is not None:
+        account_object = current_account_model.to_entity()
+        account_model = current_account_model
+    else:
+        raise HTTPException(status_code=404, detail="Account not found")
+    try:
+        account_object.withdraw(request.withdraw_amount)
+        account_model.balance = account_object.balance
+    except InvalidAmountError:
+        raise HTTPException(status_code=400, detail="Withdraw amount must be greater than zero")
+    except InsufficientFundsError:
+        raise HTTPException(status_code=400, detail="Withdraw amount must be less than or equal to balance")
+    db.commit()
+    return account_object.to_dict()
 
 @app.post("/transfer")
-def transfer(request: TransferRequest):
-    sender_account_found = False
-    receiver_account_found = False
-    for account in accounts:
-        if request.sender_account_number == account.account_number:
-            sender_account_found = True
-            sender_account = account
-        elif request.receiver_account_number == account.account_number:
-            receiver_account_found = True
-            receiver_account = account
-    if sender_account_found == True and receiver_account_found == True:
-        try:
-           sender_account.withdraw(request.transfer_amount)
-        except InvalidAmountError:
-            raise HTTPException(status_code=400, detail="Withdraw amount must be greater than zero")
-        except InsufficientFundsError:
-            raise HTTPException(status_code=400, detail="Withdraw amount must be less than or equal to balance")
-        receiver_account.deposit(request.transfer_amount)
-        return sender_account.to_dict()
+def transfer(request: TransferRequest, db = Depends(get_db)):
+    sender_savings_account_model = db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == request.sender_account_number).first()
+    sender_current_account_model = db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == request.sender_account_number).first()
+
+    receiver_savings_account_model = db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == request.receiver_account_number).first()
+    receiver_current_account_model = db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == request.receiver_account_number).first()
+
+    if sender_savings_account_model is not None:
+        sender_account_object = sender_savings_account_model.to_entity()
+        sender_account_model = sender_savings_account_model
+    elif sender_current_account_model is not None:
+        sender_account_object = sender_current_account_model.to_entity()
+        sender_account_model = sender_current_account_model
     else:
         raise HTTPException(status_code=404, detail="Account not found")
 
+    if receiver_savings_account_model is not None:
+        receiver_account_object = receiver_savings_account_model.to_entity()
+        receiver_account_model = receiver_savings_account_model
+    elif receiver_current_account_model is not None:
+        receiver_account_object = receiver_current_account_model.to_entity()
+        receiver_account_model = receiver_current_account_model
+    else:
+        raise HTTPException(status_code=404, detail="Account not found")
+    try:
+       sender_account_object.withdraw(request.transfer_amount)
+       sender_account_model.balance = sender_account_object.balance
+    except InvalidAmountError:
+        raise HTTPException(status_code=400, detail="Withdraw amount must be greater than zero")
+    except InsufficientFundsError:
+        raise HTTPException(status_code=400, detail="Withdraw amount must be less than or equal to balance")
+    receiver_account_object.deposit(request.transfer_amount)
+    receiver_account_model.balance = receiver_account_object.balance
+    db.commit()
+    return sender_account_object.to_dict()
+
 @app.put("/accounts/{account_number}")
-def update_account(request: UpdateAccountRequest, account_number: str):
-    for account in accounts:
-        if account_number == account.account_number:
-            if request.account_holder is not None:
-                account.account_holder = request.account_holder
-            if request.email is not None:
-                account.email = request.email
-            if request.phone_number is not None:
-                account.phone_number = request.phone_number
-            return account.to_dict()
-    raise HTTPException(status_code=404, detail="Account not found")
+def update_account(request: UpdateAccountRequest, account_number: str, db = Depends(get_db)):
+    savings_account_model = db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == account_number).first()
+    current_account_model = db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == account_number).first()
+
+    if savings_account_model is not None:
+        account_model = savings_account_model
+    elif current_account_model is not None:
+        account_model = current_account_model
+    else:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    if request.account_holder is not None:
+        account_model.account_holder = request.account_holder
+    if request.email is not None:
+        account_model.email = request.email
+    if request.phone_number is not None:
+        account_model.phone_number = request.phone_number
+    db.commit()
+    db.refresh(account_model)
+    return account_model.to_entity().to_dict()
 
 @app.delete("/accounts/{account_number}")
-def close_account(account_number: str):
-    for account in accounts:
-        if account_number == account.account_number:
-           accounts.remove(account)
-           return {"message": "Account closed successfully"}
-    raise HTTPException(status_code=404, detail="Account not found")
+def close_account(account_number: str, db = Depends(get_db)):
+    savings_account_model = db.query(SavingsAccountModel).filter(SavingsAccountModel.account_number == account_number).first()
+    current_account_model = db.query(CurrentAccountModel).filter(CurrentAccountModel.account_number == account_number).first()
+
+    if savings_account_model is not None:
+        account_model = savings_account_model
+    elif current_account_model is not None:
+        account_model = current_account_model
+    else:
+        raise HTTPException(status_code=404, detail="Account not found")
+    db.delete(account_model)
+    db.commit()
+    return {"message": "Account closed successfully"}
