@@ -1,6 +1,6 @@
 # Banking API
 
-A REST API built with FastAPI that exposes core banking operations including account creation, deposits, withdrawals, transfers, and account management.
+A REST API built with FastAPI that exposes core banking operations including account creation, deposits, withdrawals, transfers, and account management. Account data is persisted in a PostgreSQL database.
 
 This project is the API layer built on top of the [Banking CLI App](https://github.com/Biralee11/banking-app), reusing the same account logic and extending it with a proper HTTP interface.
 
@@ -10,9 +10,30 @@ This project is the API layer built on top of the [Banking CLI App](https://gith
 - FastAPI
 - Uvicorn
 - Pydantic
+- SQLAlchemy
+- PostgreSQL
+- Alembic
 - Docker
 
-## Getting Started
+## Running with Docker (Recommended)
+
+Make sure Docker Desktop is running, then:
+
+```bash
+docker-compose up --build -d
+```
+
+The API will be available at `http://127.0.0.1:8000`
+
+Interactive API documentation is available at `http://127.0.0.1:8000/docs`
+
+To stop the containers:
+
+```bash
+docker-compose down
+```
+
+## Running Locally (Without Docker)
 
 Clone the repository and navigate into the project folder.
 
@@ -34,6 +55,12 @@ Install dependencies.
 pip install -r requirements.txt
 ```
 
+Run database migrations.
+
+```bash
+alembic upgrade head
+```
+
 Start the server.
 
 ```bash
@@ -41,24 +68,6 @@ uvicorn main:app --reload
 ```
 
 The API will be running at `http://127.0.0.1:8000`
-
-Interactive API documentation is available at `http://127.0.0.1:8000/docs`
-
-## Docker
-
-Build the image.
-
-```bash
-docker build -t banking-api .
-```
-
-Run the container.
-
-```bash
-docker run -p 8000:8000 banking-api
-```
-
-The API will be available at `http://127.0.0.1:8000`
 
 ## Endpoints
 
@@ -75,12 +84,7 @@ The API will be available at `http://127.0.0.1:8000`
 | PUT | /accounts/{account_number} | Update account details |
 | DELETE | /accounts/{account_number} | Close an account |
 
-## Data Persistence
-
-Account data is currently held in memory. Data does not persist between server restarts. A PostgreSQL database integration is planned for a future release.
-
 ## Roadmap
 
-- PostgreSQL database integration
-- Docker containerisation and deployment ✅
 - Authentication and authorisation
+- Deployment
