@@ -16,6 +16,9 @@ class SavingsAccountModel(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     def to_entity(self):
+        # Converts the database model instance into a SavingsAccount domain object.
+        # interest_strategy is stored as a string in the database and converted back
+        # to the appropriate strategy object before building the account.
         if self.interest_strategy == "SimpleInterestStrategy":
             interest_strategy = SimpleInterestStrategy()
         elif self.interest_strategy == "CompoundInterestStrategy":
@@ -33,6 +36,7 @@ class CurrentAccountModel(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     def to_entity(self):
+        # Converts the database model instance into a CurrentAccount domain object
         return CurrentAccount(self.account_holder, self.account_number, self.balance, self.email, self.phone_number, self.overdraft_limit)
 
 class UserModel(Base):

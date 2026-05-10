@@ -12,6 +12,8 @@ app.include_router(auth_router.router)
 app.include_router(user_router.router)
 
 def get_db():
+    # Opens a database session, yields it to the endpoint, then closes it when done.
+    # Using yield ensures the session is always closed even if an error occurs.
     db = SessionLocal()
     try:
         yield db
