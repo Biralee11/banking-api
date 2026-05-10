@@ -5,7 +5,6 @@ from strategies import SimpleInterestStrategy, CompoundInterestStrategy
 
 class BaseAccountRequest(BaseModel):
     account_holder: str
-    email: str
     phone_number: str
 
     @field_validator("account_holder")
@@ -15,14 +14,6 @@ class BaseAccountRequest(BaseModel):
             return value
         else:
             raise ValueError("Invalid Name")
-        
-    @field_validator("email")
-    @classmethod
-    def validate_email(cls, value):
-        if re.search(r"^[\w.]+@\w+(\.\w+)+$", value):
-            return value
-        else:
-            raise ValueError("Invalid Email")
         
     @field_validator("phone_number")
     @classmethod
@@ -80,7 +71,6 @@ class TransferRequest(BaseModel):
 
 class UpdateAccountRequest(BaseModel):
     account_holder: Optional[str] = None
-    email: Optional[str] = None
     phone_number: Optional[str] = None
 
     @field_validator("account_holder")
@@ -93,16 +83,6 @@ class UpdateAccountRequest(BaseModel):
         else:
             raise ValueError("Invalid Name")
         
-    @field_validator("email")
-    @classmethod
-    def validate_email(cls, value):
-        if value is None:
-            return None
-        elif re.search(r"^[\w.]+@\w+(\.\w+)+$", value):
-            return value
-        else:
-            raise ValueError("Invalid Email")
-        
     @field_validator("phone_number")
     @classmethod
     def validate_phone_number(cls, value):
@@ -112,3 +92,66 @@ class UpdateAccountRequest(BaseModel):
             return value
         else:
             raise ValueError("Invalid Phone Number")
+        
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value):
+        if re.search(r"^[a-zA-Z][a-zA-Z0-9]{5,7}$", value):
+            return value
+        else:
+            raise ValueError("Invalid Username")
+        
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value):
+        if re.search(r"^[\w.]+@\w+(\.\w+)+$", value):
+            return value
+        else:
+            raise ValueError("Invalid Email")
+        
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[^a-zA-Z0-9]", value):
+            raise ValueError("Password must contain at least one special character")        
+        if re.search(r"^[a-zA-Z].{7,11}$", value):
+            return value
+        else:
+            raise ValueError("Invalid Password")
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class UpdateEmailRequest(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value):
+        if re.search(r"^[\w.]+@\w+(\.\w+)+$", value):
+            return value
+        else:
+            raise ValueError("Invalid Email")
+
+class UpdatePasswordRequest(BaseModel):
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[^a-zA-Z0-9]", value):
+            raise ValueError("Password must contain at least one special character")        
+        if re.search(r"^[a-zA-Z].{7,11}$", value):
+            return value
+        else:
+            raise ValueError("Invalid Password")
