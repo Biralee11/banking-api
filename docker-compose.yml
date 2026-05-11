@@ -15,4 +15,4 @@ services:
     depends_on:
       - db
     environment:
-      SECRET_KEY: 150285643fbf582fb853dc01e261150355f2d803a11418012f5f5dd83115a3c1
+      SECRET_KEY: ${SECRET_KEY}
