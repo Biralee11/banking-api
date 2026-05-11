@@ -4,6 +4,10 @@ A REST API built with FastAPI that exposes core banking operations including acc
 
 This project is the API layer built on top of the [Banking CLI App](https://github.com/Biralee11/banking-app), reusing the same account logic and extending it with a proper HTTP interface.
 
+**Live API:** https://banking-api-9nhs.onrender.com
+
+**API Documentation:** https://banking-api-9nhs.onrender.com/docs
+
 ## Tech Stack
 
 - Python 3.14
@@ -121,7 +125,3 @@ The API uses JWT bearer token authentication. To access protected endpoints:
 | POST | /transfer | Owner or Admin | Transfer between accounts |
 | PUT | /accounts/{account_number} | Owner or Admin | Update account details |
 | DELETE | /accounts/{account_number} | Owner or Admin | Close an account |
-
-## Roadmap
-
-- Deployment
