@@ -6,6 +6,8 @@ from passlib.context import CryptContext
 import os
 
 SECRET_KEY = os.getenv("SECRET_KEY")
+JWT_ISSUER = os.getenv("JWT_ISSUER")
+JWT_AUDIENCE = os.getenv("JWT_AUDIENCE")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -25,13 +27,23 @@ def create_access_token(data: dict) -> str:
     # Encodes the provided data into a signed JWT token with an expiry time
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({
+    "exp": expire,
+    "iss": JWT_ISSUER,
+    "aud": JWT_AUDIENCE
+    })
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_access_token(token: str):
     # Decodes and verifies the token. Returns the payload dict or None if invalid or expired
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token, 
+            SECRET_KEY, 
+            algorithms=[ALGORITHM],
+            audience=JWT_AUDIENCE,
+            issuer=JWT_ISSUER
+        )
         return payload
     except JWTError:
         return None

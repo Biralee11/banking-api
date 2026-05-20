@@ -16,3 +16,5 @@ services:
       - db
     environment:
       SECRET_KEY: ${SECRET_KEY}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
