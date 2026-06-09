@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from random import randint
-from models import CreateSavingsAccountRequest, CreateCurrentAccountRequest, DepositRequest, WithdrawRequest, TransferRequest, UpdateAccountRequest
+from schemas import CreateSavingsAccountRequest, CreateCurrentAccountRequest, DepositRequest, WithdrawRequest, TransferRequest, UpdateAccountRequest
 from exceptions import InvalidAmountError, InsufficientFundsError
 from database import SessionLocal
-from db_models import SavingsAccountModel, CurrentAccountModel, UserModel
+from models import SavingsAccountModel, CurrentAccountModel, UserModel
 from auth import get_current_user
 
 router = APIRouter()

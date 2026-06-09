@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from models import UpdateEmailRequest, UpdatePasswordRequest
+from schemas import UpdateEmailRequest, UpdatePasswordRequest
 from database import SessionLocal
-from db_models import UserModel
+from models import UserModel
 from auth import hash_password, verify_password, get_current_user
 
 router = APIRouter()

@@ -1,5 +1,5 @@
 from database import SessionLocal
-from db_models import UserModel
+from models import UserModel
 from auth import hash_password
 
 db = SessionLocal()

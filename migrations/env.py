@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from database import Base
-from db_models import SavingsAccountModel, CurrentAccountModel
+from models import SavingsAccountModel, CurrentAccountModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
