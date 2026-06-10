@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator
 from typing import Optional
 import re
 from strategies import SimpleInterestStrategy, CompoundInterestStrategy
+from decimal import Decimal
 
 class BaseAccountRequest(BaseModel):
     account_holder: str
@@ -24,8 +25,8 @@ class BaseAccountRequest(BaseModel):
             raise ValueError("Invalid Phone Number")
 
 class CreateSavingsAccountRequest(BaseAccountRequest):
-    balance: float
-    interest_rate: float
+    balance: Decimal
+    interest_rate: Decimal
     interest_strategy: str
 
     @field_validator("interest_rate")
@@ -47,8 +48,8 @@ class CreateSavingsAccountRequest(BaseAccountRequest):
             raise ValueError("Invalid Interest strategy")
 
 class CreateCurrentAccountRequest(BaseAccountRequest):
-    balance: float
-    overdraft_limit: float
+    balance: Decimal
+    overdraft_limit: Decimal
 
     @field_validator("overdraft_limit")
     @classmethod
@@ -59,15 +60,15 @@ class CreateCurrentAccountRequest(BaseAccountRequest):
             raise ValueError("Invalid Overdraft Limit")
 
 class DepositRequest(BaseModel):
-    deposit_amount: float
+    deposit_amount: Decimal
 
 class WithdrawRequest(BaseModel):
-    withdraw_amount: float
+    withdraw_amount: Decimal
 
 class TransferRequest(BaseModel):
     sender_account_number: str
     receiver_account_number: str
-    transfer_amount: float
+    transfer_amount: Decimal
 
 class UpdateAccountRequest(BaseModel):
     account_holder: Optional[str] = None

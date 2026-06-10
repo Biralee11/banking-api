@@ -1,5 +1,5 @@
 from database import Base
-from sqlalchemy import Column, String, Float, Integer, ForeignKey
+from sqlalchemy import Column, String, Numeric, Integer, ForeignKey
 from savings_account import SavingsAccount
 from current_account import CurrentAccount
 from strategies import SimpleInterestStrategy, CompoundInterestStrategy
@@ -8,10 +8,10 @@ class SavingsAccountModel(Base):
     __tablename__ = "savings_accounts"
     account_holder = Column(String, nullable=False) 
     account_number = Column(String, primary_key=True)
-    balance = Column(Float, nullable=False)
+    balance = Column(Numeric(15, 2), nullable=False)
     email = Column(String, nullable=False)
     phone_number = Column(String, nullable=False)
-    interest_rate = Column(Float, nullable=False)
+    interest_rate = Column(Numeric(5, 4), nullable=False)
     interest_strategy = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
@@ -29,10 +29,10 @@ class CurrentAccountModel(Base):
     __tablename__ = "current_accounts"
     account_holder = Column(String, nullable=False) 
     account_number = Column(String, primary_key=True)
-    balance = Column(Float, nullable=False)
+    balance = Column(Numeric(15, 2), nullable=False)
     email = Column(String, nullable=False)
     phone_number = Column(String, nullable=False)
-    overdraft_limit = Column(Float, nullable=False)
+    overdraft_limit = Column(Numeric(15, 2), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     def to_entity(self):
