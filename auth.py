@@ -3,13 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-import os
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-JWT_ISSUER = os.getenv("JWT_ISSUER")
-JWT_AUDIENCE = os.getenv("JWT_AUDIENCE")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+from config import SECRET_KEY, JWT_ISSUER, JWT_AUDIENCE, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Configures bcrypt as the hashing algorithm for passwords
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
